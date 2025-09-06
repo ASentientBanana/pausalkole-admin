@@ -92,7 +92,7 @@ func GetCompleteInvoiceByID(db *gorm.DB, id string) (models.Invoice, error) {
 	var invoice models.Invoice
 	err := db.
 		Preload("Recipient.Fields"). // preload nested entity fields
-		Preload("Agency.Fields"). // preload nested entity fields
+		Preload("Agency.Fields").    // preload nested entity fields
 		Preload("Items").
 		First(&invoice, "invoices.id = ?", id).Error
 
@@ -112,7 +112,7 @@ func GetAllUserInvoices(c *gin.Context, db *gorm.DB) {
 	var invoices []models.Invoice
 	err = db.
 		Preload("Recipient.Fields"). // preload nested entity fields
-		Preload("Agency.Fields"). // preload nested entity fields
+		Preload("Agency.Fields").    // preload nested entity fields
 		Preload("Items").
 		Where("user_id = ?", id).
 		Find(&invoices).Error

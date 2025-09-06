@@ -33,9 +33,14 @@ func UnpackJwtToken(tokenString string, secret string) (*jwt.Token, error) {
 	return token, err
 }
 
-func ExtractClaims(token *jwt.Token) map[string]interface{} {
+func ExtractClaims(token *jwt.Token) (map[string]interface{}, error) {
 	claims := token.Claims.(jwt.MapClaims)
-	return claims
+
+	if claims == nil {
+		return nil, errors.New("token claims nil")
+	}
+
+	return claims, nil
 }
 
 func ValidateJwtToken(tokenString string, secret string) (bool, error) {
@@ -46,6 +51,10 @@ func ValidateJwtToken(tokenString string, secret string) (bool, error) {
 		}
 		return []byte(secret), nil
 	})
+
+	if err != nil {
+		return false, err
+	}
 
 	expiration := token.Claims.(jwt.MapClaims)["exp"]
 
@@ -75,6 +84,17 @@ func ExtractClaimFromHeader(tokenString string, target string) (string, error) {
 		return "", err
 	}
 
-	return ExtractClaims(token)[target].(string), nil
+	claims, err := ExtractClaims(token)
+	targetClaim := claims[target]
+
+	if err != nil {
+		return "", err
+	}
+
+	if targetClaim == "" || claims == nil {
+		return "", errors.New("token is empty")
+	}
+
+	return targetClaim.(string), nil
 
 }

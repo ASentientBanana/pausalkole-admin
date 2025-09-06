@@ -1,5 +1,7 @@
 package dto
 
+import "github.com/asentientbanana/pausalkole-admin/models"
+
 type InvoiceItemDto struct {
 	Amount      float32 `json:"amount"`
 	Quantity    int     `json:"quantity"`
@@ -29,4 +31,10 @@ type AddInvoiceDto struct {
 type UpdateInvoiceDto struct {
 	AddInvoiceDto
 	ID string `json:"id" binding:"required"`
+}
+
+type CompleteInvoiceDto struct {
+	models.Invoice
+	Recipient models.Entity `json:"recipient" binding:"required"`
+	Agency    models.Entity `json:"agency" binding:"required"`
 }

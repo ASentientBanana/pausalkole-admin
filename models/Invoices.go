@@ -2,39 +2,44 @@ package models
 
 import (
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type InvoiceItem struct {
-	gorm.Model
+	BaseModel
 	ID          uuid.UUID `gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
-	Amount      float32
-	Quantity    int
-	Metric      string
-	Description string
-	InvoiceID   string
+	Amount      float32   `gorm:"default:0" json:"amount"`
+	Quantity    int       `json:"quantity"`
+	Metric      string    `json:"metric"`
+	Description string    `json:"description"`
+	InvoiceID   string    `json:"invoice_id"`
 }
 
 type InvoiceCurrencies struct {
-	gorm.Model
-	ID        uuid.UUID `gorm:"primaryKey;type:uuid"`
-	Label     string
-	Value     string
-	Symbol    string
-	Placement string
+	BaseModel
+	ID        uuid.UUID `gorm:"primaryKey;type:uuid" json:"id"`
+	Label     string    `json:"label"`
+	Value     string    `json:"value"`
+	Symbol    string    `json:"symbol"`
+	Placement string    `json:"placement"`
 }
 
 type Invoice struct {
-	gorm.Model
-	ID            uuid.UUID `gorm:"primaryKey;type:uuid"`
+	BaseModel
+	ID            uuid.UUID `gorm:"primaryKey;type:uuid" json:"id"`
 	DateCompleted int
-	Recipient     string `gorm:"foreignKey:UserID"`
-	Agency        string `gorm:"foreignKey:UserID"`
-	Total         int
-	DateDue       int
-	Description   string
-	Currency      string `gorm:"foreignKey:InvoiceCurrencies"`
-	Status        string
-	Items         []InvoiceItem `gorm:"foreignKey:InvoiceID"`
-	UserID        string
+	// Foreign keys
+	RecipientID uuid.UUID `gorm:"type:uuid" json:"recipient_id"`
+	AgencyID    uuid.UUID `gorm:"type:uuid" json:"agency_id"`
+
+	// Both reference Entity table
+	Recipient Entity `gorm:"foreignKey:RecipientID;references:ID" json:"recipient"`
+	Agency    Entity `gorm:"foreignKey:AgencyID;references:ID" json:"agency"`
+
+	Total       int           `gorm:"default:0" json:"total"`
+	DateDue     int           `gorm:"default:0" json:"date_due"`
+	Description string        `gorm:"type:text" json:"description"`
+	Currency    string        `gorm:"foreignKey:InvoiceCurrencies" json:"currency"`
+	Status      string        `gorm:"type:text" json:"status"`
+	Items       []InvoiceItem `gorm:"foreignKey:InvoiceID" json:"items"`
+	UserID      string        `gorm:"type:uuid" json:"user_id"`
 }

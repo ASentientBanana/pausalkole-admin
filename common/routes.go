@@ -5,6 +5,7 @@ import (
 	"github.com/asentientbanana/pausalkole-admin/domain/currency"
 	"github.com/asentientbanana/pausalkole-admin/domain/entity"
 	"github.com/asentientbanana/pausalkole-admin/domain/invoice"
+	"github.com/asentientbanana/pausalkole-admin/domain/pdf"
 	"github.com/asentientbanana/pausalkole-admin/middleware"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -40,17 +41,22 @@ func InitializeRoutes(server *gin.Engine, db *gorm.DB) {
 	})
 
 	// Invoice
-	protected.POST("/invoice", func(context *gin.Context) {
+	protected.GET("/invoices", func(context *gin.Context) {
+		invoice.GetAllUserInvoices(context, db)
+	})
+	protected.POST("/invoices", func(context *gin.Context) {
 		invoice.AddInvoice(context, db)
 	})
-	protected.DELETE("/invoice/:id", func(context *gin.Context) {
+	protected.DELETE("/invoices/:id", func(context *gin.Context) {
 		invoice.DeleteInvoice(context, db, context.Param("id"))
 	})
-	protected.PUT("/invoice/:id", func(context *gin.Context) {
+	protected.PUT("/invoices/:id", func(context *gin.Context) {
 		invoice.UpdateInvoice(context, db)
 	})
-	protected.GET("/invoice/currencies", func(context *gin.Context) {
+	protected.GET("/invoices/currencies", func(context *gin.Context) {
 		currency.GetCurrencies(context, db)
 	})
-
+	protected.GET("/invoices/document/:id", func(context *gin.Context) {
+		pdf.GetInvoicePdf(context, db, context.Param("id"))
+	})
 }

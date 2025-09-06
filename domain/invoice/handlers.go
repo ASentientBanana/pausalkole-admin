@@ -1,7 +1,9 @@
 package invoice
 
 import (
+	"fmt"
 	"github.com/asentientbanana/pausalkole-admin/domain/invoice/dto"
+	"github.com/asentientbanana/pausalkole-admin/domain/security"
 	"github.com/asentientbanana/pausalkole-admin/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -16,18 +18,32 @@ func AddInvoice(c *gin.Context, db *gorm.DB) {
 		return
 	}
 
+	tokenString, err := security.GetTokenString(c.GetHeader("Authorization"))
+
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+
+	id, err := security.ExtractClaimFromHeader(tokenString, "id")
+
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+
 	invoice := models.Invoice{
 		ID:            uuid.New(),
 		DateCompleted: 0,
-		Recipient:     json.Recipient,
-		Agency:        json.Agency,
+		RecipientID:   uuid.MustParse(json.Recipient),
+		AgencyID:      uuid.MustParse(json.Agency),
 		Total:         json.Total,
 		DateDue:       json.DateDue,
 		Description:   json.Description,
 		Currency:      json.Currency,
 		Status:        json.Status,
-		Items:         nil,
-		UserID:        "0198b33f-b562-7ecd-8390-1313263aca53",
+		Items:         []models.InvoiceItem{},
+		UserID:        id,
 	}
 
 	for _, item := range json.Items {
@@ -69,4 +85,44 @@ func UpdateInvoice(c *gin.Context, db *gorm.DB) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated Invoice"})
+}
+
+func GetCompleteInvoiceByID(db *gorm.DB, id string) (models.Invoice, error) {
+
+	var invoice models.Invoice
+	err := db.
+		Preload("Recipient.Fields"). // preload nested entity fields
+		Preload("Agency.Fields"). // preload nested entity fields
+		Preload("Items").
+		First(&invoice, "invoices.id = ?", id).Error
+
+	if err != nil {
+		return invoice, err
+	}
+
+	return invoice, nil
+}
+
+func GetAllUserInvoices(c *gin.Context, db *gorm.DB) {
+
+	tokenString, err := security.GetTokenString(c.GetHeader("Authorization"))
+
+	id, err := security.ExtractClaimFromHeader(tokenString, "id")
+
+	var invoices []models.Invoice
+	err = db.
+		Preload("Recipient.Fields"). // preload nested entity fields
+		Preload("Agency.Fields"). // preload nested entity fields
+		Preload("Items").
+		Where("user_id = ?", id).
+		Find(&invoices).Error
+	fmt.Println(id)
+
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Unable to fetch invoices"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"invoices": invoices})
+
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/asentientbanana/pausalkole-admin/domain/invoice/dto"
 	"github.com/asentientbanana/pausalkole-admin/domain/security"
+	"github.com/asentientbanana/pausalkole-admin/errors"
 	"github.com/asentientbanana/pausalkole-admin/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -18,17 +19,10 @@ func AddInvoice(c *gin.Context, db *gorm.DB) {
 		return
 	}
 
-	tokenString, err := security.GetTokenString(c.GetHeader("Authorization"))
+	id, err := security.ExtractUserIdFromAuthHeader(c.GetHeader("Authorization"))
 
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-		return
-	}
-
-	id, err := security.ExtractClaimFromHeader(tokenString, "id")
-
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errors.CreateTokenInValidError())
 		return
 	}
 
@@ -69,6 +63,7 @@ func DeleteInvoice(c *gin.Context, db *gorm.DB, id string) {
 	tx := db.Delete(&models.Invoice{}, "id = ?", id)
 	if tx.Error != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": tx.Error.Error()})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Invoice deleted"})
 }
@@ -105,9 +100,12 @@ func GetCompleteInvoiceByID(db *gorm.DB, id string) (models.Invoice, error) {
 
 func GetAllUserInvoices(c *gin.Context, db *gorm.DB) {
 
-	tokenString, err := security.GetTokenString(c.GetHeader("Authorization"))
+	id, err := security.ExtractUserIdFromAuthHeader(c.GetHeader("Authorization"))
 
-	id, err := security.ExtractClaimFromHeader(tokenString, "id")
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errors.CreateTokenInValidError())
+		return
+	}
 
 	var invoices []models.Invoice
 	err = db.

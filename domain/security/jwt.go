@@ -63,8 +63,6 @@ func ValidateJwtToken(tokenString string, secret string) (bool, error) {
 		return false, nil
 	}
 
-	fmt.Println(expiration)
-
 	return token.Valid, err
 }
 
@@ -97,4 +95,21 @@ func ExtractClaimFromHeader(tokenString string, target string) (string, error) {
 
 	return targetClaim.(string), nil
 
+}
+
+func ExtractUserIdFromAuthHeader(headerString string) (string, error) {
+	tokenString, err := GetTokenString(headerString)
+
+	if err != nil {
+		return "", err
+	}
+
+	id, err := ExtractClaimFromHeader(tokenString, "id")
+	if err != nil {
+		return "", err
+	}
+	if id == "" {
+		return "", errors.New("token is empty")
+	}
+	return id, nil
 }

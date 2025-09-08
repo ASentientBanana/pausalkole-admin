@@ -17,8 +17,16 @@ type EntityField struct {
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
+type EntityType string
+
+const (
+	RecipientEntity EntityType = "recipient"
+	AgencyEntity    EntityType = "agency"
+)
+
 type Entity struct {
 	CreatedAt time.Time      `json:"created_at"`
+	Type      EntityType     `json:"type" binding:"required,oneof=recipient agency"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 	ID        uuid.UUID      `gorm:"primaryKey;type:uuid" json:"id"`

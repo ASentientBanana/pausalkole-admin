@@ -6,6 +6,7 @@ import (
 	"github.com/asentientbanana/pausalkole-admin/domain/entity"
 	"github.com/asentientbanana/pausalkole-admin/domain/invoice"
 	"github.com/asentientbanana/pausalkole-admin/domain/pdf"
+	"github.com/asentientbanana/pausalkole-admin/domain/user"
 	"github.com/asentientbanana/pausalkole-admin/middleware"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -15,14 +16,13 @@ func InitializeRoutes(server *gin.Engine, db *gorm.DB) {
 
 	protected := server.Group("/").Use(middleware.AuthMiddleware())
 
-	// Auth
 	server.POST("/auth/login", func(context *gin.Context) {
 		auth.HandleLogin(context, db)
 	})
 
 	// User
 	server.POST("/user/register", func(context *gin.Context) {
-		auth.HandleRegister(context, db)
+		user.HandleRegister(context, db)
 	})
 
 	// Entity
@@ -34,6 +34,9 @@ func InitializeRoutes(server *gin.Engine, db *gorm.DB) {
 	})
 	protected.GET("/entities", func(context *gin.Context) {
 		entity.GetEntities(context, db)
+	})
+	protected.GET("/entities/:type", func(context *gin.Context) {
+		entity.GetEntitiesByTypeForUser(context, db, context.Param("type"))
 	})
 	protected.DELETE("/entities/:id", func(context *gin.Context) {
 		id := context.Param("id")

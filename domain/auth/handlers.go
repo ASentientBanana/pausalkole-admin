@@ -3,13 +3,23 @@ package auth
 import (
 	"github.com/asentientbanana/pausalkole-admin/domain/auth/dto"
 	security2 "github.com/asentientbanana/pausalkole-admin/domain/security"
+	dto2 "github.com/asentientbanana/pausalkole-admin/domain/user/dto"
 	"github.com/asentientbanana/pausalkole-admin/models"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"net/http"
 )
 
+// HandleLogin godoc
+// @Summary      Login
+// @Description  Login existing user by email and password
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        credentials  body  dto.LoginDto  false  "User credentials"
+// @Success      200  {object}  dto.UserResponseDto
+// @Failure      400
+// @Router       /auth/login [post]
 func HandleLogin(c *gin.Context, db *gorm.DB) {
 	var json dto.LoginDto
 	if err := c.ShouldBind(&json); err != nil {
@@ -31,61 +41,8 @@ func HandleLogin(c *gin.Context, db *gorm.DB) {
 		return
 	}
 
-	c.JSON(200, dto.UserResponseDto{
-		User:  dto.UserResponse{ID: user.ID.String(), Email: json.Email},
+	c.JSON(200, dto2.UserResponseDto{
+		User:  dto2.UserResponse{ID: user.ID.String(), Email: json.Email},
 		Token: token,
 	})
-}
-
-func HandleRegister(c *gin.Context, db *gorm.DB) {
-	var json dto.RegisterDTO
-
-	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Problem binding",
-			"req":   json,
-		})
-		return
-	}
-
-	if json.Password != json.ConfirmPassword {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Password does not match"})
-		return
-	}
-
-	id, err := uuid.NewV7()
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
-		return
-	}
-
-	encrypted, err := security2.HashPassword(json.Password)
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
-	}
-
-	tx := db.Create(&models.Users{
-		ID:       id,
-		Email:    json.Email,
-		Password: encrypted,
-	})
-
-	if tx.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
-		return
-	}
-
-	token, err := security2.GenerateJwtToken(id.String())
-
-	var userModel models.Users
-
-	tx.First(&userModel, "id = ?", id)
-
-	c.JSON(200,
-		dto.UserResponseDto{
-			User:  dto.UserResponse{ID: userModel.ID.String(), Email: userModel.Email},
-			Token: token,
-		})
 }

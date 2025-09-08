@@ -1,5 +1,7 @@
 package dto
 
+import "github.com/asentientbanana/pausalkole-admin/models"
+
 type EntityField struct {
 	Field     string `json:"field" binding:"required"`
 	Value     string `json:"value" binding:"required"`
@@ -7,8 +9,9 @@ type EntityField struct {
 }
 
 type AddEntityDto struct {
-	Fields []EntityField `json:"fields" binding:"required"`
-	Name   string        `json:"name" binding:"required"`
+	Fields []EntityField     `json:"fields" binding:"required"`
+	Type   models.EntityType `json:"type" binding:"required,oneof=recipient agency"`
+	Name   string            `json:"name" binding:"required"`
 }
 
 type DeleteEntityDto struct {

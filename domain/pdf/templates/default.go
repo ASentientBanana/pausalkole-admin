@@ -10,6 +10,8 @@ import (
 )
 
 func GenerateDefaultInvoicePdf(invoice models.Invoice) {
+	const EntityRowMargin = 4
+
 	document := gofpdf.New("P", "mm", "A4", "")
 
 	// Define header
@@ -22,38 +24,22 @@ func GenerateDefaultInvoicePdf(invoice models.Invoice) {
 	document.AddPage()
 	document.SetFont("Arial", "", 12)
 
-	// Column widths
-	colWidth := 90.0 // half of A4 (minus margins)
-	lineHeight := 8.0
+	documentWidth := 190
 
 	leftX := 20.0
 	rightX := 110.0 // roughly half page width
 	y := 40.0
 
-	const EntityRowMargin = 4
-
-	// Agency
-	document.CellFormat(colWidth, lineHeight, invoice.Agency.Name, "0", 0, "", false, 0, "")
-	for i, agencyField := range invoice.Agency.Fields {
-		_y := y + float64(i*EntityRowMargin)
-		document.Text(leftX, _y, agencyField.Field+": "+agencyField.Value)
-	}
-
-	invoice.Recipient.Fields = append(invoice.Recipient.Fields, invoice.Agency.Fields...)
-	invoice.Recipient.Fields = append(invoice.Recipient.Fields, invoice.Agency.Fields...)
-	invoice.Recipient.Fields = append(invoice.Recipient.Fields, invoice.Agency.Fields...)
-	invoice.Recipient.Fields = append(invoice.Recipient.Fields, invoice.Agency.Fields...)
-	invoice.Recipient.Fields = append(invoice.Recipient.Fields, invoice.Agency.Fields...)
-
-	invoice.Items = append(invoice.Items, invoice.Items...)
-	invoice.Items = append(invoice.Items, invoice.Items...)
-	invoice.Items = append(invoice.Items, invoice.Items...)
-	invoice.Items = append(invoice.Items, invoice.Items...)
-	invoice.Items = append(invoice.Items, invoice.Items...)
-
 	infoHeightOffset, entityInfoRowNumber := util.CalculatePdfEntityInfoHeight(&invoice.Recipient, &invoice.Agency)
 
-	//Calculate available space for items on the first page
+	invoice.Items = append(invoice.Items, invoice.Items...)
+	invoice.Items = append(invoice.Items, invoice.Items...)
+	invoice.Items = append(invoice.Items, invoice.Items...)
+	invoice.Items = append(invoice.Items, invoice.Items...)
+	invoice.Items = append(invoice.Items, invoice.Items...)
+	invoice.Items = append(invoice.Items, invoice.Items...)
+	invoice.Items = append(invoice.Items, invoice.Items...)
+
 	initialRowLimit := 15
 	rowLimit := initialRowLimit
 	//Magic number gotten with testing
@@ -64,19 +50,29 @@ func GenerateDefaultInvoicePdf(invoice models.Invoice) {
 	} else if entityInfoRowNumber > 15 {
 		rowLimit = 10
 	} else {
-		rowLimit = entityInfoRowNumber
+		rowLimit = 20
 	}
 
-	paginatedItems := util.GetPdfRowsPerPage(invoice, initialRowLimit, rowLimit)
+	paginatedItems := util.GetPdfRowsPerPage(invoice, rowLimit, initialRowLimit)
 	//Recipient
-
 	pageCount := len(paginatedItems)
+	//Initial margin before the list
+	document.Ln(14)
+
 	for index, page := range paginatedItems {
 		if index == 0 {
-			document.CellFormat(colWidth, lineHeight, invoice.Recipient.Name, "0", 0, "", false, 0, "")
-			for i, agencyField := range invoice.Recipient.Fields {
+			// Agency
+			document.Text(leftX, y-7, invoice.Recipient.Name)
+			document.Text(rightX, y-7, invoice.Agency.Name)
+			//document.CellFormat(colWidth, lineHeight, invoice.Recipient.Name, "0", 0, "", false, 0, "")
+			for i, agencyField := range invoice.Agency.Fields {
 				_y := y + float64(i*EntityRowMargin)
-				document.Text(rightX, _y, agencyField.Field+": "+agencyField.Value)
+				document.Text(leftX, _y, agencyField.Field+": "+agencyField.Value)
+			}
+
+			for i, recipientField := range invoice.Recipient.Fields {
+				_y := y + float64(i*EntityRowMargin)
+				document.Text(rightX, _y, recipientField.Field+": "+recipientField.Value)
 
 			}
 			//Offset the element under the Agency and recipient info
@@ -85,7 +81,9 @@ func GenerateDefaultInvoicePdf(invoice models.Invoice) {
 			// Write a title
 			document.Cell(0, 10, "Description")
 			document.Ln(6)
-			document.Cell(0, 10, invoice.Description)
+			//document.MultiCell(0, 10, invoice.Description)
+			document.MultiCell(float64(documentWidth), 6, invoice.Description, "", "L", false) // false = no fill, wrap text
+
 			document.Ln(12)
 		}
 
@@ -119,15 +117,22 @@ func GenerateDefaultInvoiceItemTable(pdf *gofpdf.Fpdf, indexes []int, items []mo
 	pdf.CellFormat(20, 10, "Quantity", "0", 0, "C", false, 0, "")
 	pdf.CellFormat(20, 10, "Amount", "0", 0, "C", false, 0, "")
 	pdf.Ln(-1)
+
 	for i, row := range indexes {
 		item := items[row]
+		fill := i%2 == 0
 		amount := utils.FormatFloatUtil(float64(item.Amount))
+		if fill {
+			pdf.SetFillColor(235, 235, 235) // blue background
+		}
 
-		pdf.CellFormat(10, 10, strconv.Itoa(i+1), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(90, 10, item.Description, "1", 0, "C", false, 0, "")
-		pdf.CellFormat(30, 10, item.Metric, "1", 0, "C", false, 0, "")
-		pdf.CellFormat(20, 10, strconv.Itoa(item.Quantity), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(20, 10, amount, "1", 0, "C", false, 0, "")
+		pdf.CellFormat(10, 10, strconv.Itoa(i+1), "1", 0, "C", fill, 0, "")
+		pdf.CellFormat(90, 10, item.Description, "1", 0, "C", fill, 0, "")
+		pdf.CellFormat(30, 10, item.Metric, "1", 0, "C", fill, 0, "")
+		pdf.CellFormat(20, 10, strconv.Itoa(item.Quantity), "1", 0, "C", fill, 0, "")
+		pdf.CellFormat(20, 10, amount, "1", 0, "C", fill, 0, "")
 		pdf.Ln(-1)
 	}
+
+	pdf.SetFillColor(255, 255, 255) // blue background
 }

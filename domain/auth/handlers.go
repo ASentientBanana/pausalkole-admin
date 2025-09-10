@@ -1,9 +1,11 @@
 package auth
 
 import (
+	"fmt"
 	"github.com/asentientbanana/pausalkole-admin/domain/auth/dto"
 	security2 "github.com/asentientbanana/pausalkole-admin/domain/security"
 	dto2 "github.com/asentientbanana/pausalkole-admin/domain/user/dto"
+	"github.com/asentientbanana/pausalkole-admin/errors"
 	"github.com/asentientbanana/pausalkole-admin/models"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -23,7 +25,8 @@ import (
 func HandleLogin(c *gin.Context, db *gorm.DB) {
 	var json dto.LoginDto
 	if err := c.ShouldBind(&json); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		fmt.Println(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
 
@@ -37,7 +40,7 @@ func HandleLogin(c *gin.Context, db *gorm.DB) {
 	token, err := security2.GenerateJwtToken(user.ID.String())
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": errors.CreateInternalServerError()})
 		return
 	}
 

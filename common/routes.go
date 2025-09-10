@@ -39,8 +39,7 @@ func InitializeRoutes(server *gin.Engine, db *gorm.DB) {
 		entity.GetEntitiesByTypeForUser(context, db, context.Param("type"))
 	})
 	protected.DELETE("/entities/:id", func(context *gin.Context) {
-		id := context.Param("id")
-		entity.DeleteEntity(context, db, id)
+		entity.DeleteEntity(context, db, context.Param("id"))
 	})
 
 	// Invoice
@@ -53,7 +52,7 @@ func InitializeRoutes(server *gin.Engine, db *gorm.DB) {
 	protected.DELETE("/invoices/:id", func(context *gin.Context) {
 		invoice.DeleteInvoice(context, db, context.Param("id"))
 	})
-	protected.PUT("/invoices/:id", func(context *gin.Context) {
+	protected.PUT("/invoices", func(context *gin.Context) {
 		invoice.UpdateInvoice(context, db)
 	})
 	protected.GET("/invoices/currencies", func(context *gin.Context) {

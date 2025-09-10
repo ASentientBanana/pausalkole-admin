@@ -80,6 +80,7 @@ func GetEntitiesByTypeForUser(context *gin.Context, db *gorm.DB, entityType stri
 
 	tokenString, err := security.GetTokenString(context.GetHeader("Authorization"))
 
+	returnKey := "entities"
 	if err != nil {
 		context.AbortWithStatusJSON(http.StatusBadRequest, errors.CreateTokenInValidError())
 		return
@@ -111,7 +112,7 @@ func GetEntitiesByTypeForUser(context *gin.Context, db *gorm.DB, entityType stri
 		return
 	}
 
-	context.JSON(http.StatusOK, gin.H{"entities": entities})
+	context.JSON(http.StatusOK, gin.H{returnKey: entities})
 }
 
 func DeleteEntity(context *gin.Context, db *gorm.DB, id string) {
